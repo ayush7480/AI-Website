@@ -1,0 +1,33 @@
+pipeline {
+    agent { label 'jenkins-slave' }
+    environment {
+          AWS_DEFAULT_REGION="ap-south-1" 
+          registryCredential = "awsastlprod"
+    }
+   
+    stages {
+    stage('Deploy') {
+     steps{
+            withAWS(credentials: registryCredential, region: "${AWS_DEFAULT_REGION}") {
+              script {
+                sh 'yarn config set registry https://registry.npmjs.org'
+                sh 'yarn install'
+                sh 'yarn build:production'
+                sh 'rsync -avze "ssh -i /home/ubuntu/astprodkey.pem" dist node_modules ubuntu@35.154.225.183:/home/ubuntu/eduassist.ai47labs.com/frontend/'
+                // sh """
+                //     #!/bin/bash
+                //     ssh -i /home/ubuntu/astprodkey.pem ubuntu@35.154.225.183 << EOF
+                //     #hostname -I
+                //     cd /home/ubuntu/epaper.astconsulting.in/api/
+                //     pm2 start process.json
+                //     exit 0
+                //     << EOF
+                //     """
+                sh 'echo "Done!"'
+              }
+            } 
+        }
+      }      
+      
+    }
+}
